@@ -1,0 +1,9 @@
+name: twoXmc
+version: '0.0.1'
+main: Clay.Sam.twoXmc.TwoXmc
+api-version: '1.21'
+
+pemissions:
+  twoXmc.debug:
+    description: Allows the player to use the /twoxmc command
+    default: true
