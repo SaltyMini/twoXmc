@@ -11,7 +11,9 @@ public class BlockPlace implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
 
         Location loc = event.getBlockPlaced().getLocation();
-        Location chunkloc = loc.getChunk().getBlock(0, 64, 0).getLocation(); // Chunk origin at Y=64 X/Z=0
+        Location chunkLoc = loc.getChunk().getBlock(0, 64, 0).getLocation(); // Chunk origin at Y=64 X/Z=0
+
+        String setName = chunkLoc.getWorld().toString() + "_" + chunkLoc.getBlockX() + "/" + chunkLoc.getBlockY() + "/" + chunkLoc.getBlockZ();
 
         // Get block coordinates relative to chunk (0-15 for X and Z)
         int chunkX = loc.getBlockX() & 15;
