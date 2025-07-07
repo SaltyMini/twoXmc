@@ -22,7 +22,7 @@ public class BlockBreak implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
 
         Location loc = event.getBlock().getLocation();
-        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation(); // Chunk origin at Y=64 X/Z=0
+        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation(); // Chunk origin at X/Z=0, Y=minimum world height
 
         BitSet bitSet = cache.getBitSetCacheEntry(chunkLoc);
 

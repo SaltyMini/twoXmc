@@ -21,7 +21,7 @@ public class BlockPlace implements Listener {
     public void onBlockPlace(BlockPlaceEvent event) {
 
         Location loc = event.getBlockPlaced().getLocation();
-        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation(); // Chunk origin at Y=64 X/Z=0
+        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation(); // Chunk origin at X/Z=0, Y=minimum world height
 
         String setName = Cache.formatChunkLocation(chunkLoc);
 
