@@ -57,14 +57,25 @@ public class Cache {
         putBitSetToCache(chunkLoc, bitSet);
     }
 
-    public void removeBlockFromCache(String chunkLoc, int bitSetIndex) {
-        BitSet bitSet = getBitSetCacheEntry(chunkLoc);
+    public void removeBlockFromCache(Location chunkLoc, int bitSetIndex) {
+        BitSet bitSet = getBitSetCacheEntry(formatChunkLocation(chunkLoc));
 
         if (bitSet != null) {
             bitSet.clear(bitSetIndex);
-            putBitSetToCache(chunkLoc, bitSet);
+            putBitSetToCache(formatChunkLocation(chunkLoc), bitSet);
         }
     }
 
+    public static int locToChunkRelativeIndex(Location loc) {
+
+        // Get block coordinates relative to chunk (0-15 for X and Z)
+        int chunkX = loc.getBlockX() & 15;
+        int chunkZ = loc.getBlockZ() & 15;  // Equivalent to loc.getBlockZ() % 16
+        int y = loc.getBlockY();
+
+        // Convert 3D coordinates to 1D index
+        // Formula: index = y * 16 * 16 + z * 16 + x
+        return y * 256 + chunkZ * 16 + chunkX;
+    }
 
 }
