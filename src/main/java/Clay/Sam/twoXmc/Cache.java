@@ -43,4 +43,28 @@ public class Cache {
     public static String formatChunkLocation(Location chunkLoc) {
         return chunkLoc.getWorld().getName() + "_" + chunkLoc.getBlockX() + "/" + chunkLoc.getBlockY() + "/" + chunkLoc.getBlockZ();
     }
+
+    public void addBlockToCache(String chunkLoc, int bitSetIndex) {
+
+        BitSet bitSet = getBitSetCacheEntry(chunkLoc);
+
+        //Create a new bitset at the length of the block index
+        if (bitSet == null) {
+            bitSet = new BitSet(bitSetIndex + 1);
+        }
+
+        bitSet.set(bitSetIndex);
+        putBitSetToCache(chunkLoc, bitSet);
+    }
+
+    public void removeBlockFromCache(String chunkLoc, int bitSetIndex) {
+        BitSet bitSet = getBitSetCacheEntry(chunkLoc);
+
+        if (bitSet != null) {
+            bitSet.clear(bitSetIndex);
+            putBitSetToCache(chunkLoc, bitSet);
+        }
+    }
+
+
 }

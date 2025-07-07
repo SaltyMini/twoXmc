@@ -7,6 +7,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 
+import java.util.BitSet;
+
 public class BlockPlace implements Listener {
 
     private Cache cache;
@@ -32,6 +34,7 @@ public class BlockPlace implements Listener {
         // Formula: index = y * 16 * 16 + z * 16 + x
         int bitSetIndex = y * 256 + chunkZ * 16 + chunkX;
 
+        cache.addBlockToCache(setName, bitSetIndex);
 
     }
 }
