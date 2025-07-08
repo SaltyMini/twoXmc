@@ -6,14 +6,12 @@ import java.util.HashMap;
 
 public class SQLiteManager {
 
-    private String dbURL;
     private Connection connection;
 
     private static SQLiteManager instance;
 
 
     public SQLiteManager() {
-        this.dbURL = TwoXmc.getDbURL();
     }
 
     public static SQLiteManager getInstance() {
@@ -26,7 +24,7 @@ public class SQLiteManager {
 
     public void connect() throws SQLException {
         if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(dbURL);
+            connection = DriverManager.getConnection(TwoXmc.getDbURL());
             System.out.println("Connected to SQLite database.");
             // Initialize the table after connecting
             createTable();

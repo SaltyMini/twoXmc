@@ -30,14 +30,21 @@ public final class TwoXmc extends JavaPlugin {
     public void onEnable() {
 
         plugin = this;
-        pluginManager();
+
+        if (!getDataFolder().exists()) {
+            if (!getDataFolder().mkdirs()) {
+                getLogger().severe("Failed to create plugin data directory: " + getDataFolder().getAbsolutePath());
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+        }
 
         dbPath = getDataFolder().getAbsolutePath() + "/bitsets.db";
         dbURL = "jdbc:sqlite:" + dbPath;
         plugin.getLogger().info("Database path: " + dbPath);
 
-        dbManager = SQLiteManager.getInstance();
 
+        dbManager = SQLiteManager.getInstance();
         Cache.getBitSetCache();
         cache = Cache.getInstance();
 
@@ -53,6 +60,9 @@ public final class TwoXmc extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        pluginManager();
+
         quickSaveCache();
     }
 
