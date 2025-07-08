@@ -35,8 +35,8 @@ public class Cache {
         return bitSetCache;
     }
 
-    public void putBitSetToCache(String id, BitSet bitSet) {
-        bitSetCache.put(id, bitSet);
+    public void putBitSetToCache(Location loc, BitSet bitSet) {
+        bitSetCache.put(formatChunkLocation(loc), bitSet);
     }
 
     public BitSet getBitSetCacheEntry(Location chunkLoc) {
@@ -45,6 +45,10 @@ public class Cache {
 
     public BitSet getBitSetCacheEntry(String chunkLoc) {
         return bitSetCache.get(chunkLoc);
+    }
+
+    public void removeBitSetFromCache(Location chunkLoc) {
+        bitSetCache.remove(formatChunkLocation(chunkLoc));
     }
 
     public static String formatChunkLocation(Location chunkLoc) {
