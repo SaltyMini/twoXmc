@@ -1,9 +1,6 @@
 package Clay.Sam.twoXmc;
 
-import Clay.Sam.twoXmc.Events.BlockPlace;
-import Clay.Sam.twoXmc.Events.ChunkLoadUnload;
-import Clay.Sam.twoXmc.Events.LootGenerate;
-import Clay.Sam.twoXmc.Events.MobDrop;
+import Clay.Sam.twoXmc.Events.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
@@ -69,9 +66,12 @@ public final class TwoXmc extends JavaPlugin {
     private void pluginManager() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockPlace(), plugin);
+        pm.registerEvents(new BlockBreak(), plugin);
         pm.registerEvents(new ChunkLoadUnload(), plugin);
         pm.registerEvents(new LootGenerate(), plugin);
         pm.registerEvents(new MobDrop(), plugin);
+        pm.registerEvents(new EndermanGrief(), plugin);
+        pm.registerEvents(new DebugTool(), plugin);
     }
 
     @Override

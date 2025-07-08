@@ -16,13 +16,11 @@ public class MobDrop implements Listener {
         List<ItemStack> drops = event.getDrops();
 
         event.setDroppedExp((int) (event.getDroppedExp() * 1.5)); // double exp
-        event.getDrops().clear(); // Clear the default drops
 
         Location loc = event.getEntity().getLocation();
 
         for(ItemStack drop : drops) {
-            ItemStack doubledDrop = drop.clone();
-            doubledDrop.setAmount(drop.getAmount() * 2);
+            ItemStack doubledDrop = drop.clone(); //Drop another copy of the item
             loc.getWorld().dropItemNaturally(loc, doubledDrop);
         }
 
