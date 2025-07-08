@@ -1,8 +1,13 @@
 package Clay.Sam.twoXmc;
 
+import Clay.Sam.twoXmc.Events.BlockPlace;
+import Clay.Sam.twoXmc.Events.ChunkLoadUnload;
+import Clay.Sam.twoXmc.Events.LootGenerate;
+import Clay.Sam.twoXmc.Events.MobDrop;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -33,8 +38,27 @@ public final class TwoXmc extends JavaPlugin {
         dbPath = getDataFolder().getAbsolutePath() + "/bitsets.db";
         dbURL = "jdbc:sqlite:" + dbPath;
 
+        try {
+            dbManager.connect();
+        } catch (SQLException e) {
+            getLogger().severe("Failed to connect to database ");
+            getLogger().severe("Failed to connect to database ");
+            getLogger().severe("Failed to connect to database ");
+            getLogger().severe("Failed to connect to database ");
+            getLogger().severe("Failed to connect to database ");
+            getLogger().severe("Error: " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         quickSaveCache();
+    }
 
+    private void pluginManager() {
+        PluginManager pm = getServer().getPluginManager();
+        pm.registerEvents(new BlockPlace(), plugin);
+        pm.registerEvents(new ChunkLoadUnload(), plugin);
+        pm.registerEvents(new LootGenerate(), plugin);
+        pm.registerEvents(new MobDrop(), plugin);
     }
 
     @Override
@@ -48,6 +72,15 @@ public final class TwoXmc extends JavaPlugin {
             plugin.getLogger().severe("Failed to save BitSets to database: " + e.getMessage());
             throw new RuntimeException(e);
         }
+
+        try {
+            dbManager.quickSaveBitSets(cache.getBitSetCacheCopy());
+            dbManager.disconnect(); // Fixed: Close database connection
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to save BitSets to database: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
     }
 
     private void quickSaveCache() {

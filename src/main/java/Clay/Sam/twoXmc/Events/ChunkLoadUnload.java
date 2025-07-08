@@ -6,16 +6,17 @@ import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 
 import java.sql.SQLException;
 import java.util.BitSet;
 
 public class ChunkLoadUnload implements Listener {
 
-    private Cache cache;
-    private SQLiteManager dbManager;
+    private final Cache cache;
+    private final SQLiteManager dbManager;
 
-    public void ChunkLoadUnload() {
+    public ChunkLoadUnload() {
        cache = Cache.getInstance();
          dbManager = SQLiteManager.getInstance();
     }
@@ -33,7 +34,7 @@ public class ChunkLoadUnload implements Listener {
     }
 
     @EventHandler
-    public void onChunkUnload(ChunkLoadEvent event) throws SQLException {
+    public void onChunkUnload(ChunkUnloadEvent event) throws SQLException {
         Location loc = event.getChunk().getBlock(0, 0, 0).getLocation();
 
         // Remove the BitSet from the cache when the chunk unloads

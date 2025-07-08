@@ -74,13 +74,14 @@ public class SQLiteManager {
     public boolean hasBitSet(String id) throws SQLException {
         String sql = "SELECT 1 FROM bitsets WHERE id = ? LIMIT 1";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-             ResultSet rs = preparedStatement.executeQuery()) {
-            
-            preparedStatement.setString(1, id);
-            return rs.next(); // Returns true if a row exists
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, id); // Fixed: Set parameter BEFORE executing
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                return rs.next(); // Returns true if a row exists
+            }
         }
     }
+
 
     /**
      * Sets a BitSet, replacing any existing one with the same ID

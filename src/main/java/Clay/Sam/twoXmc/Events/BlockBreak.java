@@ -20,9 +20,8 @@ public class BlockBreak implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-
         Location loc = event.getBlock().getLocation();
-        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation(); // Chunk origin at X/Z=0, Y=minimum world height
+        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation();
 
         BitSet bitSet = cache.getBitSetCacheEntry(chunkLoc);
 
@@ -37,10 +36,11 @@ public class BlockBreak implements Listener {
             cache.removeBlockFromCache(chunkLoc, blockBitSetIndex);
         } else {
             event.setDropItems(false);
-            ItemStack itemToDrop = (ItemStack) event.getBlock().getDrops();
-            itemToDrop.setAmount(itemToDrop.getAmount() * 2); // Double the amount of dropped items
-            loc.getWorld().dropItemNaturally(loc, itemToDrop);
+            for (ItemStack drop : event.getBlock().getDrops()) {
+                ItemStack itemToDrop = drop.clone();
+                itemToDrop.setAmount(itemToDrop.getAmount() * 2); // Double the number of dropped items
+                loc.getWorld().dropItemNaturally(loc, itemToDrop);
+            }
         }
-
     }
 }
