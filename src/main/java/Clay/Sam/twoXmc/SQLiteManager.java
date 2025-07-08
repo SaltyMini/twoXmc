@@ -9,11 +9,18 @@ public class SQLiteManager {
     private String dbURL;
     private Connection connection;
 
+    private static SQLiteManager instance;
 
 
-    public SQLiteManager(String pluginDataPath) {
+    public SQLiteManager() {
         this.dbURL = TwoXmc.getDbURL();
-        // Remove pluginDataPath parameter if not needed, or use it if intended
+    }
+
+    public static SQLiteManager getInstance() {
+        if(instance == null) {
+            instance = new SQLiteManager();
+        }
+        return instance;
     }
 
 
@@ -67,10 +74,10 @@ public class SQLiteManager {
     public boolean hasBitSet(String id) throws SQLException {
         String sql = "SELECT 1 FROM bitsets WHERE id = ? LIMIT 1";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             ResultSet rs = preparedStatement.executeQuery()) {
             
-            pstmt.setString(1, id);
+            preparedStatement.setString(1, id);
             return rs.next(); // Returns true if a row exists
         }
     }
