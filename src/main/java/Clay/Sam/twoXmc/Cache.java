@@ -1,7 +1,9 @@
 package Clay.Sam.twoXmc;
 
 import org.bukkit.Location;
+import org.bukkit.plugin.Plugin;
 
+import java.sql.SQLException;
 import java.util.BitSet;
 import java.util.HashMap;
 
@@ -69,6 +71,14 @@ public class Cache {
      */
     public BitSet getBitSetCacheEntry(String chunkLoc) {
         return bitSetCache.get(chunkLoc);
+    }
+
+    /**
+     * Returns a copy of the BitSet cache.
+     * @return a copy of the BitSet cache
+     */
+    public HashMap<String, BitSet> getBitSetCacheCopy() {
+        return new HashMap<>(bitSetCache);
     }
 
     /**
