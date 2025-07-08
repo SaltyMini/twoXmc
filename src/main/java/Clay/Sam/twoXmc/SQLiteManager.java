@@ -13,6 +13,7 @@ public class SQLiteManager {
 
     public SQLiteManager(String pluginDataPath) {
         this.dbURL = TwoXmc.getDbURL();
+        // Remove pluginDataPath parameter if not needed, or use it if intended
     }
 
 
@@ -20,8 +21,9 @@ public class SQLiteManager {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(dbURL);
             System.out.println("Connected to SQLite database.");
+            // Initialize the table after connecting
+            createTable();
         }
-
     }
 
     public void disconnect() throws SQLException {
@@ -46,33 +48,29 @@ public class SQLiteManager {
         }
     }
 
-    /**
-     * Retrieves a BitSet by ID, returns null if not found
-     */
     public BitSet getBitSet(String id) throws SQLException {
         String sql = "SELECT bitset_data FROM bitsets WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, id);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                byte[] data = rs.getBytes("bitset_data");
-                return BitSet.valueOf(data);
+            pstmt.setString(1, id); // Set parameter BEFORE executing
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    byte[] data = rs.getBytes("bitset_data");
+                    return BitSet.valueOf(data);
+                }
             }
         }
         return null; // Not found
     }
 
-    /**
-     * Checks if a BitSet exists for the given ID
-     */
     public boolean hasBitSet(String id) throws SQLException {
         String sql = "SELECT 1 FROM bitsets WHERE id = ? LIMIT 1";
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
             pstmt.setString(1, id);
-            ResultSet rs = pstmt.executeQuery();
             return rs.next(); // Returns true if a row exists
         }
     }
@@ -90,14 +88,31 @@ public class SQLiteManager {
         }
     }
 
-    public void quickSaveBitSets(HashMap<String, BitSet> bitSets) {
-        for(String id : bitSets.keySet()) {
-            BitSet bitSet = bitSets.get(id);
-            try {
-                setBitSet(id, bitSet);
-            } catch (SQLException e) {
-                System.err.println("Error saving BitSet with ID " + id + ": " + e.getMessage());
+    public void quickSaveBitSets(HashMap<String, BitSet> bitSets) throws SQLException {
+        String sql = "INSERT OR REPLACE INTO bitsets (id, bitset_data) VALUES (?, ?)";
+        
+        try {
+            connection.setAutoCommit(false); // Start transaction
+            
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                for (String id : bitSets.keySet()) {
+                    BitSet bitSet = bitSets.get(id);
+                    pstmt.setString(1, id);
+                    pstmt.setBytes(2, bitSet.toByteArray());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
             }
+            
+            connection.commit(); // Commit transaction
+            System.out.println("Successfully saved " + bitSets.size() + " BitSets");
+            
+        } catch (SQLException e) {
+            connection.rollback(); // Rollback on error
+            System.err.println("Error saving BitSets: " + e.getMessage());
+            throw e; // Re-throw to let caller handle
+        } finally {
+            connection.setAutoCommit(true); // Restore auto-commit
         }
     }
 }
