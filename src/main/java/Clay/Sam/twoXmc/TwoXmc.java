@@ -30,13 +30,16 @@ public final class TwoXmc extends JavaPlugin {
     public void onEnable() {
 
         plugin = this;
-        dbManager = SQLiteManager.getInstance();
-        cache = Cache.getInstance();
-
-        Cache.getBitSetCache();
+        pluginManager();
 
         dbPath = getDataFolder().getAbsolutePath() + "/bitsets.db";
         dbURL = "jdbc:sqlite:" + dbPath;
+        plugin.getLogger().info("Database path: " + dbPath);
+
+        dbManager = SQLiteManager.getInstance();
+
+        Cache.getBitSetCache();
+        cache = Cache.getInstance();
 
         try {
             dbManager.connect();
