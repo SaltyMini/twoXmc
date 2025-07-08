@@ -42,6 +42,12 @@ public final class TwoXmc extends JavaPlugin {
         if (minuteTask != null) {
             minuteTask.cancel();
         }
+        try {
+            dbManager.quickSaveBitSets(cache.getBitSetCacheCopy());
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to save BitSets to database: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     private void quickSaveCache() {
@@ -56,7 +62,7 @@ public final class TwoXmc extends JavaPlugin {
                     throw new RuntimeException(e);
                 }
             }
-        }, 0L, 1200L); // 0L = no delay, 1200L = repeat every 1200 ticks (1 minute)
+        }, 0L, 2400L); // 0L = no delay, 1200L = repeat every 1200 ticks (1 minute)
     }
 
 
