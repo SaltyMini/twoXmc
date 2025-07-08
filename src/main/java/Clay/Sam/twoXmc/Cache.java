@@ -35,26 +35,64 @@ public class Cache {
         return bitSetCache;
     }
 
+    /**
+     * Puts a BitSet into the cache based on the chunk location.
+     * @param loc the chunk location
+     * @param bitSet the BitSet to cache
+     */
     public void putBitSetToCache(Location loc, BitSet bitSet) {
         bitSetCache.put(formatChunkLocation(loc), bitSet);
     }
 
+    /**
+     * Puts a BitSet into the cache based on the chunk location as a string.
+     * @param loc formatted chunk location
+     * @param bitSet the BitSet to cache
+     */
+    public void putBitSetToCache(String loc, BitSet bitSet) {
+        bitSetCache.put(loc, bitSet);
+    }
+
+    /**
+     * Retrieves a BitSet from the cache based on the chunk location.
+     * @param chunkLoc the location of the chunk
+     * @return the BitSet associated with the chunk location, or null if not found
+     */
     public BitSet getBitSetCacheEntry(Location chunkLoc) {
         return bitSetCache.get(formatChunkLocation(chunkLoc));
     }
 
+    /**
+     * Retrieves a BitSet from the cache based on the chunk location as a string.
+     * @param chunkLoc formatted chunk location
+     * @return the BitSet associated with the chunk location, or null if not found
+     */
     public BitSet getBitSetCacheEntry(String chunkLoc) {
         return bitSetCache.get(chunkLoc);
     }
 
+    /**
+     * Removes a BitSet from the cache based on the chunk location.
+     * @param chunkLoc the location of the chunk
+     */
     public void removeBitSetFromCache(Location chunkLoc) {
         bitSetCache.remove(formatChunkLocation(chunkLoc));
     }
 
+    /**
+     * Formats a chunk location into a string representation.
+     * The format is: worldName_blockX/blockY/blockZ
+     * @param chunkLoc The location of the chunk.
+     * @return A string representing the chunk location.
+     */
     public static String formatChunkLocation(Location chunkLoc) {
         return chunkLoc.getWorld().getName() + "_" + chunkLoc.getBlockX() + "/" + chunkLoc.getBlockY() + "/" + chunkLoc.getBlockZ();
     }
 
+    /**
+     * Add block to cache
+     * @param chunkLoc The string representation of the chunk location.
+     */
     public void addBlockToCache(String chunkLoc, int bitSetIndex) {
         BitSet bitSet = getBitSetCacheEntry(chunkLoc);
 
@@ -67,6 +105,11 @@ public class Cache {
         putBitSetToCache(chunkLoc, bitSet);
     }
 
+    /**
+     * Remove block from cache
+     * @param chunkLoc The string representation of the chunk location.
+     * @param bitSetIndex The index of the block in the BitSet.
+     */
     public void removeBlockFromCache(Location chunkLoc, int bitSetIndex) {
         BitSet bitSet = getBitSetCacheEntry(formatChunkLocation(chunkLoc));
 
@@ -76,6 +119,11 @@ public class Cache {
         }
     }
 
+    /**
+     * Converts a Bukkit Location to a chunk-relative index.
+     * @param loc The location to convert.
+     * @return The chunk-relative index (0-4095).
+     */
     public static int locToChunkRelativeIndex(Location loc) {
         // Get block coordinates relative to chunk (0-15 for X and Z)
         int chunkX = loc.getBlockX() & 15;
