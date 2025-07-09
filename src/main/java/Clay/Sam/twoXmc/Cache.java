@@ -32,7 +32,7 @@ public class Cache {
         plugin = TwoXmc.getPlugin();
     }
 
-    public static Cache getInstance() {
+    public static synchronized Cache getInstance() {
         if (instance == null) {
             instance = new Cache();
         }
@@ -72,7 +72,7 @@ public class Cache {
         bitSetCache.put(formatChunkLocation(location), bitSet);
     }
 
-    public void unloadOldBitSets() {
+    public synchronized void unloadOldBitSets() {
         if (bitSetCache.size() > CACHE_SIZE) {
             bitSetCache.remove(bitSetCache.keySet().iterator().next());
         }
@@ -117,7 +117,7 @@ public class Cache {
      * Returns a copy of the BitSet cache.
      * @return a copy of the BitSet cache
      */
-    public HashMap<String, BitSet> getBitSetCacheCopy() {
+    public synchronized HashMap<String, BitSet> getBitSetCacheCopy() {
         return new HashMap<>(bitSetCache);
     }
 

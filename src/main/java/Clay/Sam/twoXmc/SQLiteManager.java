@@ -19,7 +19,7 @@ public class SQLiteManager {
         plugin = TwoXmc.getPlugin();
     }
 
-    public static SQLiteManager getInstance() {
+    public static synchronized SQLiteManager getInstance() {
         if(instance == null) {
             instance = new SQLiteManager();
         }
