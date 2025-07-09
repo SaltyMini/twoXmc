@@ -54,6 +54,7 @@ public final class TwoXmc extends JavaPlugin {
         }
 
         cache = Cache.getInstance();
+
         pluginManager();
 
         quickSaveCache();

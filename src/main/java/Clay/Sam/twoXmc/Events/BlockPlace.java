@@ -8,7 +8,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.sql.SQLException;
-import java.util.BitSet;
 
 public class BlockPlace implements Listener {
 
