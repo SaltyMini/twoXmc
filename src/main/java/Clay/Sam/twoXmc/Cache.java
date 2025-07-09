@@ -6,11 +6,11 @@ import org.bukkit.plugin.Plugin;
 import java.sql.SQLException;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Cache {
 
-    private static LinkedHashMap<String, BitSet> bitSetCache;
+    private static ConcurrentHashMap<String, BitSet> bitSetCache;
     private static Cache instance;
     private final SQLiteManager dbManager;
     private final Plugin plugin;
@@ -27,7 +27,7 @@ public class Cache {
 
 
     public Cache() {
-        bitSetCache = new LinkedHashMap<>();
+        bitSetCache = new ConcurrentHashMap<>();
         dbManager = SQLiteManager.getInstance();
         plugin = TwoXmc.getPlugin();
     }
@@ -37,13 +37,6 @@ public class Cache {
             instance = new Cache();
         }
         return instance;
-    }
-
-    public static HashMap<String, BitSet> getBitSetCache() {
-        if (bitSetCache == null) {
-            bitSetCache = new LinkedHashMap<>();
-        }
-        return bitSetCache;
     }
 
     public enum BitSetAction {
@@ -56,7 +49,7 @@ public class Cache {
         * @param location The location to update.
         * @param action The action to perform (ADD or REMOVE).
         */
-    public void updateBitSetInCache(Location location, BitSetAction action) {
+    public synchronized void updateBitSetInCache(Location location, BitSetAction action) {
 
         unloadOldBitSets();
 
@@ -88,11 +81,26 @@ public class Cache {
 
     /**
      * Retrieves a BitSet from the cache based on the chunk location.
-     * @param chunkLoc the location of the chunk
-     * @return the BitSet associated with the chunk location, or null if not found
+     * @param blockLocation the location of the block
+     * @return the BitSet associated with the chunk the block is in, or null if not found
      */
-    public BitSet getBitSetCacheEntry(Location chunkLoc) {
-        return bitSetCache.get(formatChunkLocation(chunkLoc));
+    public synchronized BitSet getBitSetCacheEntry(Location blockLocation) {
+        BitSet bitSet = bitSetCache.get(formatChunkLocation(blockLocation));
+        if(bitSet == null) {
+            try {
+                bitSet = dbManager.getBitSet(formatChunkLocation(blockLocation));
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to retrieve BitSet from database for chunk location: " + blockLocation);
+                plugin.getLogger().severe("Error: " + e.getMessage());
+            }
+        }
+
+        if(bitSet == null) return null;
+
+        bitSetCache.remove(formatChunkLocation(blockLocation));
+        bitSetCache.put(formatChunkLocation(blockLocation), bitSet);
+
+        return bitSet;
     }
 
     /**
@@ -101,7 +109,7 @@ public class Cache {
      * @return the BitSet associated with the chunk location, or null if not found
      */
     @Deprecated
-    public BitSet getBitSetCacheEntry(String chunkLoc) {
+    public synchronized BitSet getBitSetCacheEntry(String chunkLoc) {
         return bitSetCache.get(chunkLoc);
     }
 

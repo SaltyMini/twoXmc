@@ -5,6 +5,7 @@ import org.bukkit.plugin.Plugin;
 import java.sql.*;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.Map;
 
 public class SQLiteManager {
 
@@ -104,20 +105,24 @@ public class SQLiteManager {
         String sql = "INSERT OR REPLACE INTO bitsets (id, bitset_data) VALUES (?, ?)";
         
         try {
-            connection.setAutoCommit(false); // Start transaction
+            connection.setAutoCommit(false);
             
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-                for (String id : bitSets.keySet()) {
+                for (Map.Entry<String, BitSet> entry : bitSets.entrySet()) {
                     try {
-                        BitSet bitSet = bitSets.get(id);
-                        pstmt.setString(1, id);
-                        pstmt.setBytes(2, bitSet.toByteArray());
-                        pstmt.addBatch();
-                    } catch (NullPointerException e) {
-                        plugin.getLogger().warning("Skipping null BitSet for ID: " + id);
+                        String id = entry.getKey();
+                        BitSet bitSet = entry.getValue();
+                        
+                        if (bitSet != null) {
+                            pstmt.setString(1, id);
+                            pstmt.setBytes(2, bitSet.toByteArray());
+                            pstmt.addBatch();
+                        } else {
+                            plugin.getLogger().warning("Skipping null BitSet for ID: " + id);
+                        }
                     } catch (Exception e) {
-                        plugin.getLogger().severe("Error processing BitSet for ID: " + id + " - " + e.getMessage());
-                        throw e; // Re-throw to handle in outer catch
+                        plugin.getLogger().severe("Error processing BitSet for ID: " + entry.getKey() + " - " + e.getMessage());
+                        throw e;
                     }
                 }
                 pstmt.executeBatch();
@@ -129,7 +134,7 @@ public class SQLiteManager {
         } catch (SQLException e) {
             connection.rollback(); // Rollback on error
             plugin.getLogger().severe("Error saving BitSets: " + e.getMessage());
-            throw e; // Re-throw to let caller handle
+            throw e;
         } finally {
             connection.setAutoCommit(true); // Restore auto-commit
         }

@@ -39,7 +39,6 @@ public final class TwoXmc extends JavaPlugin {
 
 
         dbManager = SQLiteManager.getInstance();
-        Cache.getBitSetCache();
         cache = Cache.getInstance();
 
         try {
