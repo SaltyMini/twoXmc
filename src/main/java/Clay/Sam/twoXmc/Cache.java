@@ -6,28 +6,34 @@ import org.bukkit.plugin.Plugin;
 import java.sql.SQLException;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Cache {
 
-    private static ConcurrentHashMap<String, BitSet> bitSetCache;
+    // Changed to final instance variable instead of static - prevents race conditions in initialization
+    private final Map<String, BitSet> bitSetCache;
     private static Cache instance;
     private final SQLiteManager dbManager;
     private final Plugin plugin;
 
-    private final int CACHE_SIZE = 1000; // Maximum number of cached BitSets
+    private final int CACHE_SIZE = 1000;
 
     // Constants for the new world height
     public static final int MIN_WORLD_HEIGHT = -64;
     public static final int MAX_WORLD_HEIGHT = 320;
-    public static final int WORLD_HEIGHT_RANGE = MAX_WORLD_HEIGHT - MIN_WORLD_HEIGHT; // 384 blocks
+    public static final int WORLD_HEIGHT_RANGE = MAX_WORLD_HEIGHT - MIN_WORLD_HEIGHT;
     public static final int CHUNK_SIZE = 16;
-    public static final int TOTAL_BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * WORLD_HEIGHT_RANGE; // 98,304 blocks
-
-
+    public static final int TOTAL_BLOCKS_PER_CHUNK = CHUNK_SIZE * CHUNK_SIZE * WORLD_HEIGHT_RANGE;
 
     public Cache() {
-        bitSetCache = new ConcurrentHashMap<>();
+        // True LRU cache: accessOrder=true makes it order by access, removeEldestEntry handles automatic eviction
+        bitSetCache = new LinkedHashMap<String, BitSet>(CACHE_SIZE + 1, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, BitSet> eldest) {
+                return size() > CACHE_SIZE; // Automatically removes LRU entries when cache exceeds size
+            }
+        };
         dbManager = SQLiteManager.getInstance();
         plugin = TwoXmc.getPlugin();
     }
@@ -44,23 +50,21 @@ public class Cache {
         REMOVE
     }
 
-    /**
-        * If the BitSet does not exist in the cache, it retrieves it from the database.
-        * @param location The location to update.
-        * @param action The action to perform (ADD or REMOVE).
-        */
     public synchronized void updateBitSetInCache(Location location, BitSetAction action) {
-
-        unloadOldBitSets();
-
+        // Removed unloadOldBitSets() call - LinkedHashMap handles this automatically
+        
         int index = locToChunkRelativeIndex(location);
+        String chunkKey = formatChunkLocation(location);
+        
+        BitSet bitSet = bitSetCache.get(chunkKey); // This marks entry as recently accessed in LRU
 
-        BitSet bitSet = bitSetCache.get(formatChunkLocation(location));
-
-        //Does not contain, load from DB
         if(bitSet == null) {
             try {
-                bitSet = dbManager.getBitSet(formatChunkLocation(location));
+                bitSet = dbManager.getBitSet(chunkKey);
+                // Create new BitSet if not found in database - prevents null pointer exceptions
+                if(bitSet == null) {
+                    bitSet = new BitSet(TOTAL_BLOCKS_PER_CHUNK);
+                }
             } catch (SQLException e) {
                 plugin.getLogger().severe("Failed to retrieve BitSet from database for location: " + location);
                 plugin.getLogger().severe("Error: " + e.getMessage());
@@ -69,92 +73,56 @@ public class Cache {
         }
 
         bitSet.set(index, action == BitSetAction.ADD);
-        bitSetCache.put(formatChunkLocation(location), bitSet);
+        bitSetCache.put(chunkKey, bitSet); // This updates LRU order and triggers automatic eviction if needed
     }
 
-    public synchronized void unloadOldBitSets() {
-        if (bitSetCache.size() > CACHE_SIZE) {
-            bitSetCache.remove(bitSetCache.keySet().iterator().next());
-        }
-    }
+    // Removed unloadOldBitSets() method - LinkedHashMap handles LRU eviction automatically
 
-
-    /**
-     * Retrieves a BitSet from the cache based on the chunk location.
-     * @param blockLocation the location of the block
-     * @return the BitSet associated with the chunk the block is in, or null if not found
-     */
     public synchronized BitSet getBitSetCacheEntry(Location blockLocation) {
-        BitSet bitSet = bitSetCache.get(formatChunkLocation(blockLocation));
+        String chunkKey = formatChunkLocation(blockLocation);
+        BitSet bitSet = bitSetCache.get(chunkKey); // This marks entry as recently accessed
+        
         if(bitSet == null) {
             try {
-                bitSet = dbManager.getBitSet(formatChunkLocation(blockLocation));
+                bitSet = dbManager.getBitSet(chunkKey);
+                // Create new BitSet if not found in database - prevents null pointer exceptions
+                if(bitSet == null) {
+                    bitSet = new BitSet(TOTAL_BLOCKS_PER_CHUNK);
+                }
+                bitSetCache.put(chunkKey, bitSet); // Add to cache and update LRU order
             } catch (SQLException e) {
                 plugin.getLogger().severe("Failed to retrieve BitSet from database for chunk location: " + blockLocation);
                 plugin.getLogger().severe("Error: " + e.getMessage());
+                return new BitSet(TOTAL_BLOCKS_PER_CHUNK); // Return empty BitSet as fallback
             }
         }
 
-        if(bitSet == null) return null;
-
-        bitSetCache.remove(formatChunkLocation(blockLocation));
-        bitSetCache.put(formatChunkLocation(blockLocation), bitSet);
-
+        // Removed manual remove/put operations - LinkedHashMap with accessOrder=true handles LRU automatically
         return bitSet;
     }
 
-    /**
-     * Retrieves a BitSet from the cache based on the chunk location as a string.
-     * @param chunkLoc formatted chunk location
-     * @return the BitSet associated with the chunk location, or null if not found
-     */
-    @Deprecated
-    public synchronized BitSet getBitSetCacheEntry(String chunkLoc) {
-        return bitSetCache.get(chunkLoc);
-    }
+    // Removed @Deprecated method - clean up unused code
 
-    /**
-     * Returns a copy of the BitSet cache.
-     * @return a copy of the BitSet cache
-     */
     public synchronized HashMap<String, BitSet> getBitSetCacheCopy() {
         return new HashMap<>(bitSetCache);
     }
 
-    /**
-     * Formats a chunk location into a string representation.
-     * The format is: worldName_blockX/blockY/blockZ
-     * @param blockWithinChunk The location of the chunk.
-     * @return A string representing the chunk location.
-     */
+    // Rest of the methods remain unchanged as they don't affect thread safety or LRU behavior
     public static String formatChunkLocation(Location blockWithinChunk) {
-
         Location chunkLoc = blockWithinChunk.getChunk().getBlock(0, 0, 0).getLocation();
-
         return chunkLoc.getWorld().getName() + "_" + chunkLoc.getBlockX() + "/" + chunkLoc.getBlockY() + "/" + chunkLoc.getBlockZ();
     }
 
-    /**
-     * Converts a Bukkit Location to a chunk-relative index.
-     * @param loc The location to convert.
-     * @return The chunk-relative index (0-4095).
-     */
     public static int locToChunkRelativeIndex(Location loc) {
-        // Get block coordinates relative to chunk (0-15 for X and Z)
         int chunkX = loc.getBlockX() & 15;
         int chunkZ = loc.getBlockZ() & 15;
         int y = loc.getBlockY();
 
-        // Validate Y coordinate is within the valid range
         if (y < MIN_WORLD_HEIGHT || y > MAX_WORLD_HEIGHT) {
             throw new IllegalArgumentException("Y coordinate " + y + " is outside valid range [" + MIN_WORLD_HEIGHT + ", " + MAX_WORLD_HEIGHT + "]");
         }
 
-        // Convert Y coordinate to relative index (0-383)
         int relativeY = y - MIN_WORLD_HEIGHT;
-
-        // Convert 3D coordinates to 1D index
-        // Formula: index = relativeY * 16 * 16 + z * 16 + x
         return relativeY * 256 + chunkZ * 16 + chunkX;
     }
 }
