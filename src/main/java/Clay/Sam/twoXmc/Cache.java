@@ -51,7 +51,14 @@ public class Cache {
         REMOVE
     }
 
+    /**
+        * If the BitSet does not exist in the cache, it retrieves it from the database.
+        * @param location The location to update.
+        * @param action The action to perform (ADD or REMOVE).
+        */
     public void updateBitSetInCache(Location location, BitSetAction action) {
+
+        unloadOldBitSets();
 
         int index = locToChunkRelativeIndex(location);
 
@@ -69,8 +76,15 @@ public class Cache {
         }
 
         bitSet.set(index, action == BitSetAction.ADD);
-
+        bitSetCache.put(formatChunkLocation(location), bitSet);
     }
+
+    public void unloadOldBitSets() {
+        if (bitSetCache.size() > CACHE_SIZE) {
+            bitSetCache.remove(bitSetCache.keySet().iterator().next());
+        }
+    }
+
 
     /**
      * Retrieves a BitSet from the cache based on the chunk location.
