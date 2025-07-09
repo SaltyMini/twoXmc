@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 
+import java.sql.SQLException;
 import java.util.BitSet;
 
 public class BlockPlace implements Listener {
@@ -18,13 +19,10 @@ public class BlockPlace implements Listener {
     }
 
     @EventHandler
-    public void onBlockPlace(BlockPlaceEvent event) {
+    public void onBlockPlace(BlockPlaceEvent event) throws SQLException {
 
         Location loc = event.getBlockPlaced().getLocation();
-        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation(); // Chunk origin at X/Z=0, Y=minimum world height
 
-        String setName = Cache.formatChunkLocation(chunkLoc);
-
-        cache.addBlockToCache(setName, Cache.locToChunkRelativeIndex(loc));
+        cache.updateBitSetInCache(loc, Cache.BitSetAction.ADD);
     }
 }

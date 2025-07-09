@@ -12,7 +12,7 @@ public class Cache {
 
     private static LinkedHashMap<String, BitSet> bitSetCache;
     private static Cache instance;
-    private SQLiteManager dbManager;
+    private final SQLiteManager dbManager;
     private final Plugin plugin;
 
     private final int CACHE_SIZE = 1000; // Maximum number of cached BitSets
@@ -46,21 +46,29 @@ public class Cache {
         return bitSetCache;
     }
 
-    enum BitSetAction {
+    public enum BitSetAction {
         ADD,
         REMOVE
     }
 
-    public void updateBitSetInCache(Location loc, int index, BitSetAction action) throws SQLException {
+    public void updateBitSetInCache(Location location, BitSetAction action) {
 
-        BitSet bitSet = getBitSetCacheEntry(formatChunkLocation(loc));
+        int index = locToChunkRelativeIndex(location);
+
+        BitSet bitSet = bitSetCache.get(formatChunkLocation(location));
 
         //Does not contain, load from DB
-        if(!bitSetCache.containsKey(formatChunkLocation(loc))) {
-
-            BitSet bitSetFromDB = dbManager.getBitSet(formatChunkLocation(loc));
-
+        if(bitSet == null) {
+            try {
+                bitSet = dbManager.getBitSet(formatChunkLocation(location));
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to retrieve BitSet from database for location: " + location);
+                plugin.getLogger().severe("Error: " + e.getMessage());
+                return;
+            }
         }
+
+        bitSet.set(index, action == BitSetAction.ADD);
 
     }
 
@@ -70,7 +78,7 @@ public class Cache {
      * @param bitSet the BitSet to cache
      */
     @Deprecated
-    public void putBitSetToCache(Location loc, BitSet bitSet) throws SQLException {
+    public void putBitSetToCache(Location loc, BitSet bitSet) {
 
         if(bitSetCache.get(formatChunkLocation(loc)) == null) {
             try {
@@ -149,10 +157,13 @@ public class Cache {
     /**
      * Formats a chunk location into a string representation.
      * The format is: worldName_blockX/blockY/blockZ
-     * @param chunkLoc The location of the chunk.
+     * @param blockWithinChunk The location of the chunk.
      * @return A string representing the chunk location.
      */
-    public static String formatChunkLocation(Location chunkLoc) {
+    public static String formatChunkLocation(Location blockWithinChunk) {
+
+        Location chunkLoc = blockWithinChunk.getChunk().getBlock(0, 0, 0).getLocation();
+
         return chunkLoc.getWorld().getName() + "_" + chunkLoc.getBlockX() + "/" + chunkLoc.getBlockY() + "/" + chunkLoc.getBlockZ();
     }
 

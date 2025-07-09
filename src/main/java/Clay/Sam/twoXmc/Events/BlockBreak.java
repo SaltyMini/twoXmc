@@ -8,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.sql.SQLException;
 import java.util.BitSet;
 
 public class BlockBreak implements Listener {
@@ -19,25 +20,9 @@ public class BlockBreak implements Listener {
     }
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(BlockBreakEvent event) throws SQLException {
         Location loc = event.getBlock().getLocation();
-        Location chunkLoc = loc.getChunk().getBlock(0, 0, 0).getLocation();
 
-        BitSet bitSet = cache.getBitSetCacheEntry(chunkLoc);
-
-        int blockBitSetIndex = Cache.locToChunkRelativeIndex(loc);
-
-        if(bitSet.get(blockBitSetIndex)) {
-            //Player placed block at location
-            cache.removeBlockFromCache(chunkLoc, blockBitSetIndex);
-        } else {
-            event.setDropItems(false);
-            for (ItemStack drop : event.getBlock().getDrops()) {
-                //TODO: Implement fortune support
-                ItemStack itemToDrop = drop.clone();
-                itemToDrop.setAmount(itemToDrop.getAmount() * 2); // Double the number of dropped items
-                loc.getWorld().dropItemNaturally(loc, itemToDrop);
-            }
-        }
+        cache.updateBitSetInCache(loc, Cache.BitSetAction.REMOVE);
     }
 }
