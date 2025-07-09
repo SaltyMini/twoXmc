@@ -25,10 +25,6 @@ public class BlockBreak implements Listener {
 
         BitSet bitSet = cache.getBitSetCacheEntry(chunkLoc);
 
-        if(bitSet == null) {
-            return;
-        }
-
         int blockBitSetIndex = Cache.locToChunkRelativeIndex(loc);
 
         if(bitSet.get(blockBitSetIndex)) {
@@ -37,6 +33,7 @@ public class BlockBreak implements Listener {
         } else {
             event.setDropItems(false);
             for (ItemStack drop : event.getBlock().getDrops()) {
+                //TODO: Implement fortune support
                 ItemStack itemToDrop = drop.clone();
                 itemToDrop.setAmount(itemToDrop.getAmount() * 2); // Double the number of dropped items
                 loc.getWorld().dropItemNaturally(loc, itemToDrop);
