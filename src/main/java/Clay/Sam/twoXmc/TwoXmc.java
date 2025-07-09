@@ -39,7 +39,6 @@ public final class TwoXmc extends JavaPlugin {
 
 
         dbManager = SQLiteManager.getInstance();
-        cache = Cache.getInstance();
 
         try {
             dbManager.connect();
@@ -54,6 +53,7 @@ public final class TwoXmc extends JavaPlugin {
             return;
         }
 
+        cache = Cache.getInstance();
         pluginManager();
 
         quickSaveCache();
@@ -75,12 +75,6 @@ public final class TwoXmc extends JavaPlugin {
     public void onDisable() {
         if (minuteTask != null) {
             minuteTask.cancel();
-        }
-        try {
-            dbManager.quickSaveBitSets(cache.getBitSetCacheCopy());
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Failed to save BitSets to database: " + e.getMessage());
-            throw new RuntimeException(e);
         }
 
         try {

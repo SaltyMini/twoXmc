@@ -10,6 +10,7 @@ import java.util.Map;
 public class SQLiteManager {
 
     private Connection connection;
+    private final Object connectionLock = new Object();
 
     private static SQLiteManager instance;
     private final Plugin plugin;
@@ -58,85 +59,78 @@ public class SQLiteManager {
     }
 
     public BitSet getBitSet(String id) throws SQLException {
-        String sql = "SELECT bitset_data FROM bitsets WHERE id = ?";
-        plugin.getLogger().info("Getting BitSet with ID: " + id);
+        synchronized (connectionLock) {
+            String sql = "SELECT bitset_data FROM bitsets WHERE id = ?";
+            plugin.getLogger().info("Getting BitSet with ID: " + id);
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, id); // Set parameter BEFORE executing
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    byte[] data = rs.getBytes("bitset_data");
-                    return BitSet.valueOf(data);
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, id); // Set parameter BEFORE executing
+
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        byte[] data = rs.getBytes("bitset_data");
+                        return BitSet.valueOf(data);
+                    }
                 }
             }
-        }
-        return null; // Not found
-    }
-
-    public boolean hasBitSet(String id) throws SQLException {
-        String sql = "SELECT 1 FROM bitsets WHERE id = ? LIMIT 1";
-        plugin.getLogger().info("Checking if BitSet with ID exists: " + id);
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, id); // Fixed: Set parameter BEFORE executing
-            try (ResultSet rs = preparedStatement.executeQuery()) {
-                return rs.next(); // Returns true if a row exists
-            }
+            return null; // Not found
         }
     }
-
 
     /**
      * Sets a BitSet, replacing any existing one with the same ID
      */
     public void setBitSet(String id, BitSet bitSet) throws SQLException {
-        String sql = "INSERT OR REPLACE INTO bitsets (id, bitset_data) VALUES (?, ?)";
-        plugin.getLogger().info("Saving BitSet with ID: " + id);
+        synchronized (connectionLock) {
+            String sql = "INSERT OR REPLACE INTO bitsets (id, bitset_data) VALUES (?, ?)";
+            plugin.getLogger().info("Saving BitSet with ID: " + id);
 
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, id);
-            pstmt.setBytes(2, bitSet.toByteArray());
-            pstmt.executeUpdate();
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, id);
+                pstmt.setBytes(2, bitSet.toByteArray());
+                pstmt.executeUpdate();
+            }
         }
     }
 
-    public void quickSaveBitSets(HashMap<String, BitSet> bitSets) throws SQLException {
-        String sql = "INSERT OR REPLACE INTO bitsets (id, bitset_data) VALUES (?, ?)";
-        
-        try {
-            connection.setAutoCommit(false);
-            
-            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-                for (Map.Entry<String, BitSet> entry : bitSets.entrySet()) {
-                    try {
-                        String id = entry.getKey();
-                        BitSet bitSet = entry.getValue();
-                        
-                        if (bitSet != null) {
-                            pstmt.setString(1, id);
-                            pstmt.setBytes(2, bitSet.toByteArray());
-                            pstmt.addBatch();
-                        } else {
-                            plugin.getLogger().warning("Skipping null BitSet for ID: " + id);
+    public synchronized void quickSaveBitSets(HashMap<String, BitSet> bitSets) throws SQLException {
+        synchronized (connectionLock) {
+            String sql = "INSERT OR REPLACE INTO bitsets (id, bitset_data) VALUES (?, ?)";
+
+            try {
+                connection.setAutoCommit(false);
+
+                try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                    for (Map.Entry<String, BitSet> entry : bitSets.entrySet()) {
+                        try {
+                            String id = entry.getKey();
+                            BitSet bitSet = entry.getValue();
+
+                            if (bitSet != null) {
+                                pstmt.setString(1, id);
+                                pstmt.setBytes(2, bitSet.toByteArray());
+                                pstmt.addBatch();
+                            } else {
+                                plugin.getLogger().warning("Skipping null BitSet for ID: " + id);
+                            }
+                        } catch (Exception e) {
+                            plugin.getLogger().severe("Error processing BitSet for ID: " + entry.getKey() + " - " + e.getMessage());
+                            throw e;
                         }
-                    } catch (Exception e) {
-                        plugin.getLogger().severe("Error processing BitSet for ID: " + entry.getKey() + " - " + e.getMessage());
-                        throw e;
                     }
+                    pstmt.executeBatch();
                 }
-                pstmt.executeBatch();
+
+                connection.commit(); // Commit transaction
+                plugin.getLogger().info("Successfully saved " + bitSets.size() + " BitSets");
+
+            } catch (SQLException e) {
+                connection.rollback(); // Rollback on error
+                plugin.getLogger().severe("Error saving BitSets: " + e.getMessage());
+                throw e;
+            } finally {
+                connection.setAutoCommit(true); // Restore auto-commit
             }
-            
-            connection.commit(); // Commit transaction
-            plugin.getLogger().info("Successfully saved " + bitSets.size() + " BitSets");
-            
-        } catch (SQLException e) {
-            connection.rollback(); // Rollback on error
-            plugin.getLogger().severe("Error saving BitSets: " + e.getMessage());
-            throw e;
-        } finally {
-            connection.setAutoCommit(true); // Restore auto-commit
         }
     }
 }

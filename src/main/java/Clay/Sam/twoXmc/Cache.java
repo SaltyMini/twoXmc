@@ -31,6 +31,13 @@ public class Cache {
         bitSetCache = new LinkedHashMap<String, BitSet>(CACHE_SIZE + 1, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, BitSet> eldest) {
+                //save to database before removing
+                try {
+                    dbManager.setBitSet(eldest.getKey(), eldest.getValue());
+                } catch (SQLException e) {
+                    plugin.getLogger().severe("Failed to save BitSet to database for key: " + eldest.getKey());
+                    plugin.getLogger().severe("Error: " + e.getMessage());
+                }
                 return size() > CACHE_SIZE; // Automatically removes LRU entries when cache exceeds size
             }
         };
