@@ -73,56 +73,10 @@ public class Cache {
     }
 
     /**
-     * Puts a BitSet into the cache based on the chunk location.
-     * @param loc the chunk location
-     * @param bitSet the BitSet to cache
-     */
-    @Deprecated
-    public void putBitSetToCache(Location loc, BitSet bitSet) {
-
-        if(bitSetCache.get(formatChunkLocation(loc)) == null) {
-            try {
-                BitSet bitSetFromDB = dbManager.getBitSet(formatChunkLocation(loc));
-             bitSetCache.put(formatChunkLocation(loc), bitSetFromDB);
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to retrieve BitSet from database for location: " + loc);
-                plugin.getLogger().severe("Error: " + e.getMessage());
-                return;
-            }
-        }
-        bitSetCache.put(formatChunkLocation(loc), bitSet);
-    }
-
-    /**
-     * Puts a BitSet into the cache based on the chunk location as a string.
-     * @param loc formatted chunk location
-     * @param bitSet the BitSet to cache
-     */
-    @Deprecated
-    public void putBitSetToCache(String loc, BitSet bitSet) throws SQLException {
-
-        BitSet bitSetToAdd = bitSetCache.get(loc);
-
-        if(bitSetCache.get(loc) == null) {
-            BitSet bitSetFromDB;
-            try {
-                bitSetFromDB = dbManager.getBitSet(loc);
-
-            } catch (SQLException e) {
-                plugin.getLogger().severe("Failed to retrieve BitSet from database for location: " + loc);
-                plugin.getLogger().severe("Error: " + e.getMessage());
-                return;
-            }
-        }
-        bitSetCache.put(loc, bitSet);
-    }
-
-    /**
      * Retrieves a BitSet from the cache based on the chunk location.
      * @param chunkLoc the location of the chunk
      * @return the BitSet associated with the chunk location, or null if not found
      */
-    @Deprecated
     public BitSet getBitSetCacheEntry(Location chunkLoc) {
         return bitSetCache.get(formatChunkLocation(chunkLoc));
     }
@@ -141,17 +95,8 @@ public class Cache {
      * Returns a copy of the BitSet cache.
      * @return a copy of the BitSet cache
      */
-    @Deprecated
     public HashMap<String, BitSet> getBitSetCacheCopy() {
         return new HashMap<>(bitSetCache);
-    }
-
-    /**
-     * Removes a BitSet from the cache based on the chunk location.
-     * @param chunkLoc the location of the chunk
-     */
-    public void removeBitSetFromCache(Location chunkLoc) {
-        bitSetCache.remove(formatChunkLocation(chunkLoc));
     }
 
     /**
@@ -165,36 +110,6 @@ public class Cache {
         Location chunkLoc = blockWithinChunk.getChunk().getBlock(0, 0, 0).getLocation();
 
         return chunkLoc.getWorld().getName() + "_" + chunkLoc.getBlockX() + "/" + chunkLoc.getBlockY() + "/" + chunkLoc.getBlockZ();
-    }
-
-    /**
-     * Add block to cache
-     * @param chunkLoc The string representation of the chunk location.
-     */
-    public void addBlockToCache(String chunkLoc, int bitSetIndex) throws SQLException {
-        BitSet bitSet = getBitSetCacheEntry(chunkLoc);
-
-        // Create a new bitset with the full chunk capacity
-        if (bitSet == null) {
-            bitSet = new BitSet(TOTAL_BLOCKS_PER_CHUNK + 1);
-        }
-
-        bitSet.set(bitSetIndex);
-        putBitSetToCache(chunkLoc, bitSet);
-    }
-
-    /**
-     * Remove block from cache
-     * @param chunkLoc The string representation of the chunk location.
-     * @param bitSetIndex The index of the block in the BitSet.
-     */
-    public void removeBlockFromCache(Location chunkLoc, int bitSetIndex) throws SQLException {
-        BitSet bitSet = getBitSetCacheEntry(formatChunkLocation(chunkLoc));
-
-        if (bitSet != null) {
-            bitSet.clear(bitSetIndex);
-            putBitSetToCache(formatChunkLocation(chunkLoc), bitSet);
-        }
     }
 
     /**

@@ -2,21 +2,17 @@ package Clay.Sam.twoXmc;
 
 import Clay.Sam.twoXmc.Events.*;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.event.EventHandler;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.sql.SQLException;
-import java.util.BitSet;
-import java.util.HashMap;
+
 
 public final class TwoXmc extends JavaPlugin {
 
     private static String dbURL;
-    private String dbPath;
 
     private BukkitTask minuteTask;
 
@@ -37,7 +33,7 @@ public final class TwoXmc extends JavaPlugin {
             }
         }
 
-        dbPath = getDataFolder().getAbsolutePath() + "/bitsets.db";
+        String dbPath = getDataFolder().getAbsolutePath() + "/bitsets.db";
         dbURL = "jdbc:sqlite:" + dbPath;
         plugin.getLogger().info("Database path: " + dbPath);
 
@@ -70,7 +66,6 @@ public final class TwoXmc extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockPlace(), plugin);
         pm.registerEvents(new BlockBreak(), plugin);
-        pm.registerEvents(new ChunkLoadUnload(), plugin);
         pm.registerEvents(new LootGenerate(), plugin);
         pm.registerEvents(new MobDrop(), plugin);
         pm.registerEvents(new EndermanGrief(), plugin);
@@ -101,15 +96,12 @@ public final class TwoXmc extends JavaPlugin {
 
     private void quickSaveCache() {
         // 20 ticks = 1 second, so 1200 ticks = 60 seconds = 1 minute
-        minuteTask = Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    dbManager.quickSaveBitSets(cache.getBitSetCacheCopy());
-                } catch (SQLException e) {
-                    plugin.getLogger().severe("Failed to save BitSets to database: " + e.getMessage());
-                    throw new RuntimeException(e);
-                }
+        minuteTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            try {
+                dbManager.quickSaveBitSets(cache.getBitSetCacheCopy());
+            } catch (SQLException e) {
+                plugin.getLogger().severe("Failed to save BitSets to database: " + e.getMessage());
+                throw new RuntimeException(e);
             }
         }, 0L, 2400L); // 0L = no delay, 1200L = repeat every 1200 ticks (1 minute)
     }
