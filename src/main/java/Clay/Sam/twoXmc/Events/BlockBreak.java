@@ -30,6 +30,7 @@ public class BlockBreak implements Listener {
         Block block = event.getBlock();
         Collection<ItemStack> drops = block.getDrops(event.getPlayer().getInventory().getItemInMainHand());
 
+
         if(!bitSet.get(Cache.locToChunkRelativeIndex(loc))) {
             //bitset does not contain the block so x2
             for(ItemStack drop : drops) {
@@ -38,14 +39,12 @@ public class BlockBreak implements Listener {
             }
         }
 
+        //Drop the items
+        Location dropLoc = loc.clone().add(0, 0.5, 0);
         event.setDropItems(false);
         for(ItemStack drop : drops) {
-            if(drop.getType() != Material.AIR) {
-                loc.getWorld().dropItemNaturally(loc, drop);
-            }
+            dropLoc.getWorld().dropItemNaturally(dropLoc, drop);
         }
-
-        cache.updateBitSetInCache(loc, Cache.BitSetAction.REMOVE);
 
     }
 }

@@ -22,6 +22,6 @@ public class BlockPlace implements Listener {
 
         Location loc = event.getBlockPlaced().getLocation();
 
-        cache.updateBitSetInCache(loc, Cache.BitSetAction.ADD);
+        cache.updateBitSetInCache(loc);
     }
 }

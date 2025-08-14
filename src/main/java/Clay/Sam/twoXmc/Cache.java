@@ -52,18 +52,12 @@ public class Cache {
         return instance;
     }
 
-    public enum BitSetAction {
-        ADD,
-        REMOVE
-    }
-
-    public synchronized void updateBitSetInCache(Location location, BitSetAction action) {
-        // Removed unloadOldBitSets() call - LinkedHashMap handles this automatically
+    public synchronized void updateBitSetInCache(Location location) {
         
         int index = locToChunkRelativeIndex(location);
         String chunkKey = formatChunkLocation(location);
         
-        BitSet bitSet = bitSetCache.get(chunkKey); // This marks entry as recently accessed in LRU
+        BitSet bitSet = bitSetCache.get(chunkKey);
 
         if(bitSet == null) {
             try {
@@ -79,7 +73,7 @@ public class Cache {
             }
         }
 
-        bitSet.set(index, action == BitSetAction.ADD);
+        bitSet.set(index);
         bitSetCache.put(chunkKey, bitSet); // This updates LRU order and triggers automatic eviction if needed
     }
 
